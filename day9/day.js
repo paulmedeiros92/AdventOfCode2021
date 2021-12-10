@@ -1,4 +1,3 @@
-const { lchownSync } = require('fs');
 const { txtToLineArray } = require('../ingest/lineByLine');
 
 function canContinue(matrix, y, x) {

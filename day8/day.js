@@ -1,7 +1,5 @@
 const { txtToLineArray } = require('../ingest/lineByLine');
 
-const uniqueLengths = [2, 3, 4, 7];
-
 function determineKeys(keys) {
   const knownLengths = [
     { digit: 1, length: 2 },
