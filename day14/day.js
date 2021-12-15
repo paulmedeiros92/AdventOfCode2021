@@ -1,60 +1,56 @@
 const { txtToLineArray } = require('../ingest/lineByLine');
 
-function divideAndMatch(input, rules) {
-  if (input.length > 1) {
-    const foundKey = Array.from(rules.keys()).sort((a, b) => b.length - a.length).find((key) => input.includes(key));
-    const pivotStart = input.indexOf(foundKey);
-    const pivotEnd = input.indexOf(foundKey) + foundKey.length - 1;
-    const leftInput = input.slice(0, pivotStart + 1);
-    const rightInput = input.slice(pivotEnd); 
-    // can filter rules out if need be
-    const left = divideAndMatch(leftInput, rules);
-    const right = divideAndMatch(rightInput, rules);
-    if (foundKey.length > 2 ) {
-      console.log(`${foundKey} was used`);
-    }
-    return left + rules.get(foundKey) + right;
-  }
-  return input;
-}
-
 const lines = txtToLineArray('./day14/input.txt');
-let input = lines[0];
+let input = lines[0].split('');
 lines.shift();
 lines.shift();
 const rules = new Map();
+let pairs = new Map();
 lines.forEach((line) => {
   const rule = line.split(' -> ');
   rules.set(rule[0], rule[1]);
+  pairs.set(rule[0], 0);
 });
 
-const steps = 20;
+for (let i = 0; i < input.length - 1; i++) {
+  pairs.set(input.slice(i, i+2).join(''), pairs.get(input.slice(i, i+2).join('')) + 1);
+}
+
+const steps = 40;
 const t0 = performance.now();
-// for (let j = 0; j < steps; j++) {
-//   const oldInput = input.join('');
-//   for (let i = 0; i < input.length - 1; i += 2) {
-//     const validRule = rules.get(input.slice(i, i+2).join(''));
-//     input.splice(i+1, 0, validRule);
-//   }
-//   rules.set(oldInput, input.join(''))
-// }
 for (let j = 0; j < steps; j++) {
-  const oldInput = input;
-  input = divideAndMatch(input, rules);
-  rules.set(oldInput, input)
+  const newPairs = new Map(pairs);
+  pairs.forEach((value, key) => {
+    if (value > 0) {
+      newPairs.set(key, newPairs.get(key) - value);
+      const insert = rules.get(key);
+      const left = key[0] + insert;
+      const right = insert + key[1];
+      newPairs.set(left, newPairs.get(left) + value);
+      newPairs.set(right, newPairs.get(right) + value);
+    }
+  });
+  pairs = new Map(newPairs);
 }
 const t1 = performance.now();
 console.log(`Took ${t1 - t0} milliseconds`);
 
 const counts = new Map();
-input.split('').forEach((char) => {
-  if (counts.get(char)) {
-    counts.set(char, counts.get(char) + 1);
+pairs.forEach((value, key) => {
+  const leftCount = counts.get(key[0]);
+  if (leftCount) {
+    counts.set(key[0], leftCount + value);
   } else {
-    counts.set(char, 1);
+    counts.set(key[0], value);
+  }
+  const rightCount = counts.get(key[1]);
+  if (rightCount) {
+    counts.set(key[1], rightCount + value);
+  } else {
+    counts.set(key[1], value);
   }
 });
 
-const sorted = Array.from(counts.values()).sort((a,b) => b -a);
+const sorted = Array.from(counts.values()).sort((a,b) => b -a).map((num) => Math.ceil(num / 2));
 console.log(sorted);
 console.log(sorted[0] - sorted[sorted.length -1]);
